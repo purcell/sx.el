@@ -126,23 +126,26 @@ elements:
 
 Also see `sx-question-list-refresh'."
   (sx-assoc-let question-data
-    (let ((favorite (if (member .question_id
-                                (assoc .site
-                                       sx-favorites--user-favorite-list))
-                        (if (char-displayable-p ?\x2b26) "\x2b26" "*") " ")))
+    (let ((favorite (if (and .question_id
+                             (member .question_id
+                                     (assoc .site
+                                            sx-favorites--user-favorite-list)))
+                        (if (char-displayable-p ?\x2b26) "\x2b26" "*")
+                      " ")))
       (list
        question-data
        (vector
         (list (int-to-string .score)
               'face (if .upvoted 'sx-question-list-score-upvoted
                       'sx-question-list-score))
-        (list (int-to-string .answer_count)
-              'face (if (sx-question--accepted-answer-id question-data)
-                        'sx-question-list-answers-accepted
-                      'sx-question-list-answers))
+        (list
+         (if .answer_count (int-to-string .answer_count) "")
+         'face (if (sx-question--accepted-answer-id question-data)
+                   'sx-question-list-answers-accepted
+                 'sx-question-list-answers))
         (concat
          (propertize
-          .title
+          (or .title "Answer")
           'face (if (sx-question--read-p question-data)
                     'sx-question-list-read-question
                   'sx-question-list-unread-question))
@@ -163,7 +166,7 @@ This variable gets reset to 0 before every refresh.
 It should be used by `sx-question-list--next-page-function'.")
 (make-variable-buffer-local 'sx-question-list--pages-so-far)
 
-(defvar sx-question-list--refresh-function nil 
+(defvar sx-question-list--refresh-function nil
   "Function used to refresh the list of questions to be displayed.
 Used by `sx-question-list-mode', this is a function, called with
 no arguments, which returns a list questions to be displayed,
@@ -429,7 +432,7 @@ that may currently be there."
   (sx-question-list-next n)
   (sx-display-question
    (tabulated-list-get-id)
-   nil 
+   nil
    (sx-question-list--create-question-window)))
 
 (defun sx-question-list--create-question-window ()
@@ -535,7 +538,7 @@ This does not update `sx-question-mode--window'."
 
 (defun sx-question-list-switch-site (site)
   "Switch the current site to SITE and display its questions.
-Use `ido-completing-read' if variable `ido-mode' is active.  
+Use `ido-completing-read' if variable `ido-mode' is active.
 Retrieve completions from `sx-site-get-api-tokens'.
 Sets `sx-question-list--site' and then call
 `sx-question-list-refresh' with `redisplay'."
